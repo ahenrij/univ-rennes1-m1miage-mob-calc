@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">Calculator</string>
 
-    <string name="line_one">0</string>
+    <string name="op_add">+</string>
+    <string name="op_sub">-</string>
+    <string name="op_mul">×</string>
+    <string name="op_div">÷</string>
+    <string name="op_mod">%</string>
 </resources>

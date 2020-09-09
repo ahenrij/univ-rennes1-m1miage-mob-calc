@@ -18,7 +18,9 @@
         android:text="0"
         android:textSize="50sp"
         android:textColor="@color/gray_dark"
-        android:padding="10dp"
+        android:padding="5dp"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
         android:inputType="none"
         android:gravity="end|bottom"/>
 
@@ -33,7 +35,9 @@
             android:src="@drawable/backspace_outline"
             app:tint="@color/gray"
             android:padding="10dp"
+            android:paddingEnd="20dp"
             android:scaleType="fitEnd"
+            android:onClick="doBackSpace"
             android:layout_alignParentEnd="true"/>
 
     </RelativeLayout>
@@ -55,20 +59,25 @@
             android:layout_columnSpan="2"
             android:height="40dp"
             android:width="40dp"
+            android:onClick="clearAll"
             android:text="C" />
 
         <Button
+            android:id="@+id/op_mod"
             android:layout_column="2"
             android:layout_columnWeight="1"
             android:layout_row="@integer/row1"
             android:layout_rowWeight="1"
+            android:onClick="addOperator"
             android:text="%" />
 
         <Button
+            android:id="@+id/op_div"
             android:layout_column="3"
             android:layout_columnWeight="1"
             android:layout_row="@integer/row1"
             android:layout_rowWeight="1"
+            android:onClick="addOperator"
             android:text="÷" />
 
         <!--Line 2-->
@@ -77,6 +86,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row2"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="7" />
 
         <Button
@@ -84,6 +94,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row2"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="8" />
 
         <Button
@@ -91,13 +102,16 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row2"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="9" />
 
         <Button
+            android:id="@+id/op_mul"
             android:layout_column="3"
             android:layout_columnWeight="1"
             android:layout_row="@integer/row2"
             android:layout_rowWeight="1"
+            android:onClick="addOperator"
             android:text="×" />
 
         <!--Line 3-->
@@ -106,6 +120,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row3"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="4" />
 
         <Button
@@ -113,6 +128,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row3"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="5" />
 
         <Button
@@ -120,13 +136,16 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row3"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="6" />
 
         <Button
+            android:id="@+id/op_sub"
             android:layout_column="3"
             android:layout_columnWeight="1"
             android:layout_row="@integer/row3"
             android:layout_rowWeight="1"
+            android:onClick="addOperator"
             android:text="-" />
 
         <!--Line 4-->
@@ -135,6 +154,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row4"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="1" />
 
         <Button
@@ -142,6 +162,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row4"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="2" />
 
         <Button
@@ -149,14 +170,17 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row4"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="3" />
 
         <Button
+            android:id="@+id/op_add"
             android:layout_column="3"
             android:layout_columnWeight="1"
             android:layout_row="@integer/row4"
             android:layout_rowWeight="1"
             android:layout_rowSpan="2"
+            android:onClick="addOperator"
             android:text="+" />
 
         <!--Line 5-->
@@ -172,6 +196,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row5"
             android:layout_rowWeight="1"
+            android:onClick="addNumber"
             android:text="0" />
 
         <Button
@@ -179,6 +204,7 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row5"
             android:layout_rowWeight="1"
+            android:onClick="doCalculation"
             android:text="=" />
 
 
