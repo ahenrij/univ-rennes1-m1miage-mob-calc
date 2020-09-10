@@ -1,14 +1,17 @@
 package com.ad.calculator;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,6 +20,9 @@ public class MainActivity extends AppCompatActivity {
     private String currentOperator;
     private String currentDisplay;
     private EditText etDisplay;
+
+    //
+
 
     private String OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD;
 
@@ -59,12 +65,13 @@ public class MainActivity extends AppCompatActivity {
 
                 //Operator at the display's end
                 if (displayEndsWithOperator()) {
-                    setCurrentDisplay(currentDisplay.substring(0, currentDisplay.length()-1) + operator);
+                    setCurrentDisplay(currentDisplay.substring(0, currentDisplay.length()-1) + "<font color=\"#" + Integer.toHexString(ContextCompat.getColor(this, R.color.colorAccent)) + "\">" + operator + "</font>");
                 } else {
 
-                    //There is an operator not at the end
-                    evaluateDisplay();
-                    addOperatorToDisplay(operator, operatorId);
+                    //There is an operator which is not at the end of expr, make the evaluation...
+                    if (evaluateDisplay()) { //...and append the new operator if evaluation succeed
+                        addOperatorToDisplay(operator, operatorId);
+                    }
                 }
 
             } else {
@@ -73,9 +80,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * @param view  Button holding the single number to append as text
+     * @post Append number or . to display if allowed
+     */
     public void addNumber(View view) {
         String number = ((Button) view).getText().toString();
-        setCurrentDisplay(currentDisplay + number);
+
+        if (number.equals(".")) {
+
+            if (!getCurrentOperand().contains(".")) {
+                if (displayEndsWithOperator() || currentDisplay.isEmpty()) {
+                    number = "0" + number;
+                }
+                setCurrentDisplay(currentDisplay + number);
+            }
+
+        } else {
+            setCurrentDisplay((currentDisplay.equals("0")) ? number : currentDisplay + number);
+        }
+
     }
 
     public void doBackSpace(View view) {
@@ -99,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setCurrentDisplay(String currentDisplay) {
         this.currentDisplay = currentDisplay;
-        etDisplay.setText(currentDisplay);
+        etDisplay.setText(Html.fromHtml(currentDisplay));
     }
 
     private void setCurrentOperator(String currentOperator) {
@@ -142,12 +166,13 @@ public class MainActivity extends AppCompatActivity {
     /**
      * @pre display contains an operator not at the end : an operation !!
      * @post calculate expression display and set it to display
+     * @return true if display has been properly evaluated, and false + toast error message if not
      */
-    private void evaluateDisplay() {
+    private boolean evaluateDisplay() {
 
+        double result = 0;
         //Quote operator to avoid special characters regex exception
         String[] operands = currentDisplay.split(Pattern.quote(this.currentOperator));
-        double result = 0;
 
         switch (this.currentOperatorId) {
             case R.id.op_add:
@@ -157,16 +182,60 @@ public class MainActivity extends AppCompatActivity {
                 result = Double.parseDouble(operands[0]) - Double.parseDouble(operands[1]);
                 break;
             case R.id.op_div:
+                if (Double.parseDouble(operands[1]) == 0.0) {
+                    Toast.makeText(this, "Division par zéro invalide", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
                 result = Double.parseDouble(operands[0]) / Double.parseDouble(operands[1]);
                 break;
             case R.id.op_mul:
                 result = Double.parseDouble(operands[0]) * Double.parseDouble(operands[1]);
                 break;
             case R.id.op_mod:
-                result = Double.parseDouble(operands[0]) % Double.parseDouble(operands[1]);
+                result = mod(Integer.parseInt(operands[0]), Integer.parseInt(operands[1]));
                 break;
+            default:
+                Toast.makeText(this, "Operateur not reconnu.", Toast.LENGTH_SHORT).show();
+                return false;
         }
 
-        setCurrentDisplay(String.valueOf(result));
+        //if result if integer, show it as int
+        if (doubleIsInteger(result)) {
+            setCurrentDisplay(String.valueOf((int) result));
+        } else {
+            //Show double result with precision of result_precision integer after . if needed
+            setCurrentDisplay((String.valueOf(result).split(Pattern.quote("."))[1].length() > getResources().getInteger(R.integer.result_precision)) ? String.format(Locale.FRANCE,"%." +  getResources().getInteger(R.integer.result_precision) + "f", result) : String.valueOf(result));
+        }
+        return true;
+    }
+
+    /**
+     *
+     * @return the current operand that user is typing and empty if no operands
+     */
+    private String getCurrentOperand() {
+        if (!displayContainsOperator()) {
+            return currentDisplay;
+        } else {
+            return displayEndsWithOperator() ? "" : currentDisplay.split(Pattern.quote(this.currentOperator))[1];
+        }
+    }
+
+    /**
+     * @return x modulo y
+     */
+    private int mod(int x, int y)
+    {
+        int result = x % y;
+        return result < 0? result + y : result;
+    }
+
+    /**
+     *
+     * @param result (of operation)
+     * @return true if result is an integer (.0)
+     */
+    private boolean doubleIsInteger(Double result) {
+        return (result == Math.floor(result)) && !Double.isInfinite(result);
     }
 }

@@ -16,11 +16,12 @@
         android:background="@color/gray_light"
         android:enabled="false"
         android:text="0"
-        android:textSize="50sp"
+        android:textSize="40sp"
         android:textColor="@color/gray_dark"
         android:padding="5dp"
         android:paddingStart="15dp"
         android:paddingEnd="15dp"
+        android:lines="3"
         android:inputType="none"
         android:gravity="end|bottom"/>
 
@@ -69,7 +70,7 @@
             android:layout_row="@integer/row1"
             android:layout_rowWeight="1"
             android:onClick="addOperator"
-            android:text="%" />
+            android:text="+/-" />
 
         <Button
             android:id="@+id/op_div"
@@ -189,7 +190,9 @@
             android:layout_columnWeight="1"
             android:layout_row="@integer/row5"
             android:layout_rowWeight="1"
-            android:text="+/-" />
+            android:textStyle="bold"
+            android:onClick="addNumber"
+            android:text="." />
 
         <Button
             android:layout_column="1"
