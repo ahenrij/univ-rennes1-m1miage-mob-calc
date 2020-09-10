@@ -9,6 +9,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.util.regex.Pattern;
+
 public class MainActivity extends AppCompatActivity {
 
     private int currentOperatorId;
@@ -143,8 +145,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private void evaluateDisplay() {
 
-        Log.e("operator", this.currentOperator);
-        String[] operands = currentDisplay.split(this.currentOperator);
+        //Quote operator to avoid special characters regex exception
+        String[] operands = currentDisplay.split(Pattern.quote(this.currentOperator));
         double result = 0;
 
         switch (this.currentOperatorId) {
