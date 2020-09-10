@@ -5,10 +5,10 @@ import androidx.core.content.ContextCompat;
 
 import android.os.Bundle;
 import android.text.Html;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.util.Locale;
@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
     private String currentOperator;
     private String currentDisplay;
     private EditText etDisplay;
-
+    private ImageView imgBackspace;
     //
 
 
@@ -34,9 +34,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         etDisplay = findViewById(R.id.et_display);
+        imgBackspace = findViewById(R.id.img_backspace);
 
         initValues();
-
     }
 
     private void initValues() {
@@ -51,6 +51,14 @@ public class MainActivity extends AppCompatActivity {
 
         setCurrentDisplay("");
         setCurrentOperator("");
+
+        imgBackspace.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                clearAll(view);
+                return true;
+            }
+        });
     }
 
     public void addOperator(View view) {
