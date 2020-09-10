@@ -79,7 +79,7 @@
             android:layout_row="@integer/row1"
             android:layout_rowWeight="1"
             android:onClick="addOperator"
-            android:text="÷" />
+            android:text="@string/op_div" />
 
         <!--Line 2-->
         <Button
@@ -113,7 +113,7 @@
             android:layout_row="@integer/row2"
             android:layout_rowWeight="1"
             android:onClick="addOperator"
-            android:text="×" />
+            android:text="@string/op_mul" />
 
         <!--Line 3-->
         <Button
@@ -147,7 +147,7 @@
             android:layout_row="@integer/row3"
             android:layout_rowWeight="1"
             android:onClick="addOperator"
-            android:text="-" />
+            android:text="@string/op_sub" />
 
         <!--Line 4-->
         <Button
@@ -182,7 +182,7 @@
             android:layout_rowWeight="1"
             android:layout_rowSpan="2"
             android:onClick="addOperator"
-            android:text="+" />
+            android:text="@string/op_add" />
 
         <!--Line 5-->
         <Button
