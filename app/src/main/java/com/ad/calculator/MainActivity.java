@@ -3,9 +3,13 @@ package com.ad.calculator;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -21,7 +25,9 @@ public class MainActivity extends AppCompatActivity {
     private String currentDisplay;
     private EditText etDisplay;
     private ImageView imgBackspace;
-    //
+
+    //If there was a calculation and a number is typed
+    private boolean shouldStartOver = false;
 
 
     private String OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD;
@@ -32,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        changeStatusBarColor();
 
         etDisplay = findViewById(R.id.et_display);
         imgBackspace = findViewById(R.id.img_backspace);
@@ -68,12 +75,13 @@ public class MainActivity extends AppCompatActivity {
             String operator = ((Button) view).getText().toString();
             Integer operatorId = view.getId();
 
-            //No operator in the display
-            if (displayContainsOperator()) {
+            //For unary minus verification, make sure operator is the current one
+            if (!currentOperator.isEmpty()) {
 
                 //Operator at the display's end
                 if (displayEndsWithOperator()) {
-                    setCurrentDisplay(currentDisplay.substring(0, currentDisplay.length()-1) + "<font color=\"#" + Integer.toHexString(ContextCompat.getColor(this, R.color.colorAccent)) + "\">" + operator + "</font>");
+                    //Replace the operator
+                    setCurrentDisplay(currentDisplay.substring(0, currentDisplay.length()-1) +  operator);
                 } else {
 
                     //There is an operator which is not at the end of expr, make the evaluation...
@@ -85,6 +93,9 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 addOperatorToDisplay(operator, operatorId);
             }
+        }
+        if (shouldStartOver) {
+            shouldStartOver = false;
         }
     }
 
@@ -105,7 +116,13 @@ public class MainActivity extends AppCompatActivity {
             }
 
         } else {
-            setCurrentDisplay((currentDisplay.equals("0")) ? number : currentDisplay + number);
+
+            if (shouldStartOver) {
+                setCurrentDisplay(number);
+                shouldStartOver = false;
+            } else {
+                setCurrentDisplay((currentDisplay.equals("0")) ? number : currentDisplay + number);
+            }
         }
 
     }
@@ -131,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setCurrentDisplay(String currentDisplay) {
         this.currentDisplay = currentDisplay;
-        etDisplay.setText(Html.fromHtml(currentDisplay));
+        etDisplay.setText(currentDisplay);
     }
 
     private void setCurrentOperator(String currentOperator) {
@@ -212,8 +229,10 @@ public class MainActivity extends AppCompatActivity {
             setCurrentDisplay(String.valueOf((int) result));
         } else {
             //Show double result with precision of result_precision integer after . if needed
-            setCurrentDisplay((String.valueOf(result).split(Pattern.quote("."))[1].length() > getResources().getInteger(R.integer.result_precision)) ? String.format(Locale.FRANCE,"%." +  getResources().getInteger(R.integer.result_precision) + "f", result) : String.valueOf(result));
+            setCurrentDisplay((String.valueOf(result).split(Pattern.quote("."))[1].length() > getResources().getInteger(R.integer.result_precision)) ? String.format(Locale.FRANCE,"%." +  getResources().getInteger(R.integer.result_precision) + "f", result).replace(",", ".") : String.valueOf(result));
         }
+        shouldStartOver = true;
+        currentOperator = "";
         return true;
     }
 
@@ -232,8 +251,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * @return x modulo y
      */
-    private int mod(int x, int y)
-    {
+    private int mod(int x, int y) {
         int result = x % y;
         return result < 0? result + y : result;
     }
@@ -245,5 +263,13 @@ public class MainActivity extends AppCompatActivity {
      */
     private boolean doubleIsInteger(Double result) {
         return (result == Math.floor(result)) && !Double.isInfinite(result);
+    }
+
+    private void changeStatusBarColor() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.parseColor("#bdbdbd"));
+        }
     }
 }
