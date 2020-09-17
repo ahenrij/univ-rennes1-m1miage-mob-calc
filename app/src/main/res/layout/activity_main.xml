@@ -48,7 +48,6 @@
         android:layout_height="0dp"
         android:layout_weight="60"
         android:columnCount="4"
-        android:padding="3dp"
         android:rowCount="5">
 
         <!--Line 1-->

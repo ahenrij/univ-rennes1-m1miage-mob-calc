@@ -1,12 +1,11 @@
 package com.ad.calculator;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.Html;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -19,6 +18,9 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
+
+    public static final String CURR_OP_KEY = "currentOperatorKey";
+    public static final String CURR_DISPLAY_KEY = "currentDisplayKey";
 
     private int currentOperatorId;
     private String currentOperator;
@@ -34,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] operators;
 
+    Double ok = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,10 +46,10 @@ public class MainActivity extends AppCompatActivity {
         etDisplay = findViewById(R.id.et_display);
         imgBackspace = findViewById(R.id.img_backspace);
 
-        initValues();
+        initValues(savedInstanceState);
     }
 
-    private void initValues() {
+    private void initValues(Bundle savedInstanceState) {
 
         OP_ADD = getResources().getString(R.string.op_add);
         OP_SUB = getResources().getString(R.string.op_sub);
@@ -56,8 +59,13 @@ public class MainActivity extends AppCompatActivity {
 
         operators = new String[]{OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD};
 
-        setCurrentDisplay("");
-        setCurrentOperator("");
+        if (savedInstanceState != null) {
+            setCurrentDisplay(savedInstanceState.getString(CURR_DISPLAY_KEY, ""));
+            setCurrentOperator(savedInstanceState.getString(CURR_OP_KEY, ""));
+        } else {
+            setCurrentDisplay("");
+            setCurrentOperator("");
+        }
 
         imgBackspace.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -81,7 +89,9 @@ public class MainActivity extends AppCompatActivity {
                 //Operator at the display's end
                 if (displayEndsWithOperator()) {
                     //Replace the operator
-                    setCurrentDisplay(currentDisplay.substring(0, currentDisplay.length()-1) +  operator);
+                    currentDisplay = currentDisplay.substring(0, currentDisplay.length()-1);
+                    addOperatorToDisplay(operator, operatorId);
+
                 } else {
 
                     //There is an operator which is not at the end of expr, make the evaluation...
@@ -156,15 +166,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean displayContainsOperator() {
-
-        boolean contains = false;
-        for (String operator: operators) {
-            if (currentDisplay.contains(operator)) {
-                contains = true;
-                break;
-            }
-        }
-        return contains;
+        return !this.currentOperator.isEmpty();
     }
 
     private boolean displayEndsWithOperator() {
@@ -199,28 +201,28 @@ public class MainActivity extends AppCompatActivity {
         //Quote operator to avoid special characters regex exception
         String[] operands = currentDisplay.split(Pattern.quote(this.currentOperator));
 
-        switch (this.currentOperatorId) {
-            case R.id.op_add:
+        switch (this.currentOperator) {
+            case "+":
                 result = Double.parseDouble(operands[0]) + Double.parseDouble(operands[1]);
                 break;
-            case R.id.op_sub:
+            case "-":
                 result = Double.parseDouble(operands[0]) - Double.parseDouble(operands[1]);
                 break;
-            case R.id.op_div:
+            case "÷":
                 if (Double.parseDouble(operands[1]) == 0.0) {
                     Toast.makeText(this, "Division par zéro invalide", Toast.LENGTH_SHORT).show();
                     return false;
                 }
                 result = Double.parseDouble(operands[0]) / Double.parseDouble(operands[1]);
                 break;
-            case R.id.op_mul:
+            case "×":
                 result = Double.parseDouble(operands[0]) * Double.parseDouble(operands[1]);
                 break;
-            case R.id.op_mod:
-                result = mod(Integer.parseInt(operands[0]), Integer.parseInt(operands[1]));
+            case "%":
+                result = mod(Integer.parseInt(operands[0].split(Pattern.quote("."))[0]), Integer.parseInt(operands[1].split(Pattern.quote("."))[0]));
                 break;
             default:
-                Toast.makeText(this, "Operateur not reconnu.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Operateur non reconnu.", Toast.LENGTH_SHORT).show();
                 return false;
         }
 
@@ -271,5 +273,12 @@ public class MainActivity extends AppCompatActivity {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(Color.parseColor("#bdbdbd"));
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(CURR_OP_KEY, this.currentOperator);
+        outState.putString(CURR_DISPLAY_KEY, this.currentDisplay);
     }
 }
