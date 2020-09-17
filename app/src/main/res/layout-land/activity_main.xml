@@ -16,15 +16,16 @@
         android:orientation="vertical"
         android:background="@color/gray_light">
 
-        <EditText
-            android:id="@+id/et_display"
+        <TextView
+            android:id="@+id/tv_display"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginBottom="50dp"
             android:background="@color/gray_light"
             android:enabled="false"
-            android:text="0"
             android:textSize="40sp"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMaxTextSize="50sp"
             android:textColor="@color/gray_dark"
             android:padding="5dp"
             android:paddingStart="15dp"
@@ -45,6 +46,7 @@
                 android:layout_height="50dp"
                 android:src="@drawable/backspace_outline"
                 android:padding="13dp"
+                android:paddingStart="20dp"
                 android:paddingEnd="20dp"
                 android:scaleType="fitEnd"
                 android:onClick="doBackSpace"

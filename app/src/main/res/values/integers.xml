@@ -11,5 +11,5 @@
     <integer name="col3">2</integer>
     <integer name="col4">3</integer>
 
-    <integer name="result_precision">10</integer>
+    <integer name="result_precision">4</integer>
 </resources>

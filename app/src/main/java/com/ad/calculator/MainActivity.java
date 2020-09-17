@@ -6,44 +6,41 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Html;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.Locale;
-import java.util.regex.Pattern;
+import java.text.DecimalFormat;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String CURR_OP_KEY = "currentOperatorKey";
-    public static final String CURR_DISPLAY_KEY = "currentDisplayKey";
+    public enum Operator { ADD, SUB, MUL, DIV, MOD }
 
-    private int currentOperatorId;
-    private String currentOperator;
-    private String currentDisplay;
-    private EditText etDisplay;
+    public static final String CURR_OP_KEY = "currentOperatorKey";
+    public static final String CURR_OP1_KEY = "currentOp1Key";
+    public static final String CURR_OP2_KEY = "currentOp2Key";
+
+    private TextView tvDisplay;
     private ImageView imgBackspace;
 
-    //If there was a calculation and a number is typed
-    private boolean shouldStartOver = false;
+    private String operand1, operand2;
+    private Operator operator;
+    private boolean isOn1; //is typing operand 1
+    private boolean shouldStartOver = false; //If there was a calculation from equal btn, and a number is typed
 
 
-    private String OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD;
-
-    private String[] operators;
-
-    Double ok = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         changeStatusBarColor();
 
-        etDisplay = findViewById(R.id.et_display);
+        tvDisplay = findViewById(R.id.tv_display);
         imgBackspace = findViewById(R.id.img_backspace);
 
         initValues(savedInstanceState);
@@ -51,20 +48,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void initValues(Bundle savedInstanceState) {
 
-        OP_ADD = getResources().getString(R.string.op_add);
-        OP_SUB = getResources().getString(R.string.op_sub);
-        OP_MUL = getResources().getString(R.string.op_mul);
-        OP_DIV = getResources().getString(R.string.op_div);
-        OP_MOD = getResources().getString(R.string.op_mod);
-
-        operators = new String[]{OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD};
-
         if (savedInstanceState != null) {
-            setCurrentDisplay(savedInstanceState.getString(CURR_DISPLAY_KEY, ""));
-            setCurrentOperator(savedInstanceState.getString(CURR_OP_KEY, ""));
+            operator = (Operator) savedInstanceState.getSerializable(CURR_OP_KEY);
+            operand1 = savedInstanceState.getString(CURR_OP1_KEY, "");
+            operand2 = savedInstanceState.getString(CURR_OP2_KEY, "");
+            isOn1 = (operator == null);
         } else {
-            setCurrentDisplay("");
-            setCurrentOperator("");
+            resetValues();
         }
 
         imgBackspace.setOnLongClickListener(new View.OnLongClickListener() {
@@ -74,180 +64,268 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+        updateDisplay();
     }
 
+    /**
+     * setOperator holded by view to be the current operator
+     * @pre view hold an operator in text, and !operand1.isEmpty()
+     * @param view
+     */
     public void addOperator(View view) {
 
-        if (!currentDisplay.isEmpty()) {
+        if (!operand1.isEmpty()) {
 
-            String operator = ((Button) view).getText().toString();
-            Integer operatorId = view.getId();
-
-            //For unary minus verification, make sure operator is the current one
-            if (!currentOperator.isEmpty()) {
-
-                //Operator at the display's end
-                if (displayEndsWithOperator()) {
-                    //Replace the operator
-                    currentDisplay = currentDisplay.substring(0, currentDisplay.length()-1);
-                    addOperatorToDisplay(operator, operatorId);
-
-                } else {
-
-                    //There is an operator which is not at the end of expr, make the evaluation...
-                    if (evaluateDisplay()) { //...and append the new operator if evaluation succeed
-                        addOperatorToDisplay(operator, operatorId);
-                    }
-                }
-
-            } else {
-                addOperatorToDisplay(operator, operatorId);
+            if (operator != null && !operand2.isEmpty()) {
+                compute();
             }
+            int operatorId = view.getId();
+            setOperator(operatorId);
+            updateDisplay();
         }
-        if (shouldStartOver) {
-            shouldStartOver = false;
+    }
+
+    private void setOperator(int operatorId) {
+        isOn1 = false;
+        switch (operatorId) {
+            case R.id.op_add:
+                operator = Operator.ADD;
+                break;
+            case R.id.op_sub:
+                operator = Operator.SUB;
+                break;
+            case R.id.op_mul:
+                operator = Operator.MUL;
+                break;
+            case R.id.op_div:
+                operator = Operator.DIV;
+                break;
+            case R.id.op_mod:
+                operator = Operator.MOD;
+                break;
+            default:
+                Toast.makeText(this, "Opérateur non reconnu", Toast.LENGTH_SHORT).show();
+                isOn1 = true;
         }
     }
 
     /**
-     * @param view  Button holding the single number to append as text
-     * @post Append number or . to display if allowed
+     * @param view Button holding the single number to append as text
+     * @post Append number or . to display if allowed (and appropriate operand)
      */
     public void addNumber(View view) {
         String number = ((Button) view).getText().toString();
+        String operand = (isOn1) ? operand1 : operand2;
 
         if (number.equals(".")) {
-
-            if (!getCurrentOperand().contains(".")) {
-                if (displayEndsWithOperator() || currentDisplay.isEmpty()) {
-                    number = "0" + number;
+            if (!operand.contains(".")) {
+                if (operand.isEmpty()) {
+                    operand = "0";
                 }
-                setCurrentDisplay(currentDisplay + number);
+                operand += ".";
             }
-
         } else {
-
-            if (shouldStartOver) {
-                setCurrentDisplay(number);
+            if (shouldStartOver) { //happen only after compute from equal btn
+                operand = number;
                 shouldStartOver = false;
             } else {
-                setCurrentDisplay((currentDisplay.equals("0")) ? number : currentDisplay + number);
+                operand = appendTo(operand, number);
             }
         }
 
+        if (isOn1) {
+            operand1 = operand;
+        } else {
+            operand2 = operand;
+        }
+        updateDisplay();
     }
 
+    /**
+     * Remove last char entered
+     * @param view
+     */
     public void doBackSpace(View view) {
-        if (!currentDisplay.isEmpty()) {
-            setCurrentDisplay(currentDisplay.substring(0, currentDisplay.length() - 1));
-        }
-    }
 
-    public void clearAll(View view) {
-        setCurrentDisplay("");
-    }
+        if (!isOn1) { //isOn operand 2 or operator
 
-    public void doCalculation(View view) {
-
-        if (displayEndsWithOperator()) {
-            Toast.makeText(this, "Un format non valide est utilisé.", Toast.LENGTH_SHORT).show();
-        } else if (displayContainsOperator()) {
-            evaluateDisplay();
-        }
-    }
-
-    private void setCurrentDisplay(String currentDisplay) {
-        this.currentDisplay = currentDisplay;
-        etDisplay.setText(currentDisplay);
-    }
-
-    private void setCurrentOperator(String currentOperator) {
-        this.currentOperator = currentOperator;
-    }
-
-    private boolean displayContainsOperator() {
-        return !this.currentOperator.isEmpty();
-    }
-
-    private boolean displayEndsWithOperator() {
-
-        boolean endsWith = false;
-        for (String operator: operators) {
-            if (currentDisplay.endsWith(operator)) {
-                endsWith = true;
-                break;
+            if (operand2.isEmpty()) { //is on operator edit
+                operator = null;
+                isOn1 = true;
+            } else { //remove last number
+                operand2 = operand2.substring(0, operand2.length() - 1);
+            }
+        } else { //on operand 1
+            if (!operand1.isEmpty()) { //if is not empty, remove last number
+                operand1 = operand1.substring(0, operand1.length() - 1);
             }
         }
-        return endsWith;
-    }
 
-
-    private void addOperatorToDisplay(String operator, Integer id) {
-        if (!displayContainsOperator()) {
-            setCurrentDisplay(currentDisplay + operator);
-            setCurrentOperator(operator);
-            this.currentOperatorId = id;
-        }
+        updateDisplay();
     }
 
     /**
-     * @pre display contains an operator not at the end : an operation !!
-     * @post calculate expression display and set it to display
-     * @return true if display has been properly evaluated, and false + toast error message if not
+     * Reset everything and clear the display
+     * @param view
      */
-    private boolean evaluateDisplay() {
+    public void clearAll(View view) {
+        resetValues();
+        updateDisplay();
+    }
 
-        double result = 0;
-        //Quote operator to avoid special characters regex exception
-        String[] operands = currentDisplay.split(Pattern.quote(this.currentOperator));
+    /**
+     * on btnEqual clicked
+     * @param view
+     */
+    public void doCalculation(View view) {
+        shouldStartOver = compute();
+    }
 
-        switch (this.currentOperator) {
-            case "+":
-                result = Double.parseDouble(operands[0]) + Double.parseDouble(operands[1]);
-                break;
-            case "-":
-                result = Double.parseDouble(operands[0]) - Double.parseDouble(operands[1]);
-                break;
-            case "÷":
-                if (Double.parseDouble(operands[1]) == 0.0) {
-                    Toast.makeText(this, "Division par zéro invalide", Toast.LENGTH_SHORT).show();
-                    return false;
+    /**
+     * On Unary minus clicked
+     * @param view
+     */
+    public void toggleUnaryMinus(View view) {
+        if (isOn1) {
+            if (!operand1.isEmpty()) {
+                operand1 = toggleOperandSign(operand1);
+            }
+        } else {
+            if (operator!= null) {
+                if (operator == Operator.SUB) {
+                    operator = Operator.ADD;
+                } else if (operator == Operator.ADD) {
+                    operator = Operator.SUB;
+                } else {
+                    operand2 = toggleOperandSign(operand2);
                 }
-                result = Double.parseDouble(operands[0]) / Double.parseDouble(operands[1]);
-                break;
-            case "×":
-                result = Double.parseDouble(operands[0]) * Double.parseDouble(operands[1]);
-                break;
-            case "%":
-                result = mod(Integer.parseInt(operands[0].split(Pattern.quote("."))[0]), Integer.parseInt(operands[1].split(Pattern.quote("."))[0]));
-                break;
-            default:
-                Toast.makeText(this, "Operateur non reconnu.", Toast.LENGTH_SHORT).show();
-                return false;
+            }
         }
+        updateDisplay();
+    }
 
-        //if result if integer, show it as int
-        if (doubleIsInteger(result)) {
-            setCurrentDisplay(String.valueOf((int) result));
-        } else {
-            //Show double result with precision of result_precision integer after . if needed
-            setCurrentDisplay((String.valueOf(result).split(Pattern.quote("."))[1].length() > getResources().getInteger(R.integer.result_precision)) ? String.format(Locale.FRANCE,"%." +  getResources().getInteger(R.integer.result_precision) + "f", result).replace(",", ".") : String.valueOf(result));
+    private String toggleOperandSign(String operand) {
+        return (operand.startsWith(getString(R.string.op_sub))) ? operand.substring(1) : getString(R.string.op_sub)+operand;
+    }
+
+    private void resetValues() {
+        operand1 = "";
+        operand2 = "";
+        operator = null;
+        isOn1 = true;
+    }
+
+
+    /**
+     * @return true if display has been properly evaluated, and false + toast error message if not
+     * @pre operand 1, operator and operand2 are defined
+     * @post calculate expression displayed and set it to display : operand1 <= result, operator = null, && operand2 = ""
+     */
+    private boolean compute() {
+
+        if (!isOn1 && !operand2.isEmpty()) {
+
+            double result = 0.0, op1 = 0.0, op2 = 0.0;
+            try {
+                op1 = Double.parseDouble(operand1);
+                op2 = Double.parseDouble(operand2);
+            } catch (NumberFormatException | ClassCastException e) {
+                Toast.makeText(this, "Valeur d'opérande erronée", Toast.LENGTH_LONG).show();
+                return false;
+            }
+
+            switch (this.operator) {
+                case ADD:
+                    result = op1 + op2;
+                    break;
+                case SUB:
+                    result = op1 - op2;
+                    break;
+                case DIV:
+                    if (Double.parseDouble(operand2) == 0.0) {
+                        Toast.makeText(this, "Division par zéro invalide", Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+                    result = op1 / op2;
+                    break;
+                case MUL:
+                    result = op1 * op2;
+                    break;
+                case MOD:
+                    result = mod((int) op1, (int) op2);
+                    break;
+                default:
+                    Toast.makeText(this, "Operateur non reconnu.", Toast.LENGTH_SHORT).show();
+                    return false;
+            }
+
+            String re = String.valueOf(result);
+
+            //if result if integer, show it as int
+            if (doubleIsInteger(result)) {
+                if (((long)result) == result) {
+                    operand1 = String.valueOf((long) result);
+                } else {
+                    operand1 = String.valueOf(result);
+                }
+            } else {
+                //Show double result with precision of result_precision integer after . if needed
+                operand1 = (new DecimalFormat("0.###")).format(result).replace(",", ".");
+            }
+
+            operand2 = "";
+            operator = null;
+            isOn1 = true;
+
+            updateDisplay();
+            return true;
         }
-        shouldStartOver = true;
-        currentOperator = "";
-        return true;
+        return false;
     }
 
     /**
-     *
-     * @return the current operand that user is typing and empty if no operands
+     * Update the display according to current values of operands and operator
      */
-    private String getCurrentOperand() {
-        if (!displayContainsOperator()) {
-            return currentDisplay;
-        } else {
-            return displayEndsWithOperator() ? "" : currentDisplay.split(Pattern.quote(this.currentOperator))[1];
+    private void updateDisplay() {
+
+        String toDisplay = "";
+        if (!operand1.isEmpty()) { //Append operand 1 if exists
+            toDisplay += operand1;
+
+            if (!isOn1) { //There is an operator added, append it
+                if (operator != null) {
+                    toDisplay +=  "<font color=\"#8BC34A\">";
+                    switch (operator) {
+                        case ADD:
+                            toDisplay += getResources().getString(R.string.op_add);
+                            break;
+                        case SUB:
+                            toDisplay += getResources().getString(R.string.op_sub);
+                            break;
+                        case DIV:
+                            toDisplay += getResources().getString(R.string.op_div);
+                            break;
+                        case MUL:
+                            toDisplay += getResources().getString(R.string.op_mul);
+                            break;
+                        case MOD:
+                            toDisplay += getResources().getString(R.string.op_mod);
+                            break;
+                        default:
+                    }
+                    toDisplay +=  "</font>";
+
+                    if (!operand2.isEmpty()) { // Append operand 2 if exists
+                        toDisplay += operand2;
+                    }
+                }
+            }
         }
+        tvDisplay.setText(Html.fromHtml(toDisplay));
+    }
+
+    private String appendTo(String str, String toAppend) {
+        return (str.equals("0") ? toAppend : str.concat(toAppend));
     }
 
     /**
@@ -255,11 +333,10 @@ public class MainActivity extends AppCompatActivity {
      */
     private int mod(int x, int y) {
         int result = x % y;
-        return result < 0? result + y : result;
+        return result < 0 ? result + y : result;
     }
 
     /**
-     *
      * @param result (of operation)
      * @return true if result is an integer (.0)
      */
@@ -278,7 +355,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString(CURR_OP_KEY, this.currentOperator);
-        outState.putString(CURR_DISPLAY_KEY, this.currentDisplay);
+        outState.putSerializable(CURR_OP_KEY, operator);
+        outState.putString(CURR_OP1_KEY, operand1);
+        outState.putString(CURR_OP2_KEY, operand2);
     }
 }

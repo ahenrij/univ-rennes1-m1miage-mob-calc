@@ -6,4 +6,7 @@
     <string name="op_mul">×</string>
     <string name="op_div">÷</string>
     <string name="op_mod">%</string>
+
+    <string name="clear_all">AC</string>
+    <string name="unary_minus">+/-</string>
 </resources>
